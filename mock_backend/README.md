@@ -39,18 +39,4 @@ frontend $ npm install socket.io
 frontend $ npm install socket.io-client
 ```
 
-* add `"proxy":"http://localhost:5001/"` in the root of to package.json:
-
-```javascript
-{
-  "name": "frontend",
-  "version": "0.1.0",
-  "private": true,
-  "proxy":"http://localhost:5001/",
-  "dependencies": {
-    "@reduxjs/toolkit": "^1.8.5",
-    // ...
-  }
-```
-
 All relevant code can be found in App.js and in the `components` folder.
