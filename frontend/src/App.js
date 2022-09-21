@@ -3,43 +3,51 @@ import logo from './images/logo.svg';
 import { Counter } from './features/counter/Counter';
 import { ServerStatus } from './features/serverstatus/ServerStatus';
 
-import WebSocketCall from "./components/WebSocketCall";
-import { io } from "socket.io-client";
+import WebSocketCall from './components/WebSocketCall';
+import { io } from 'socket.io-client';
 
 import './styles/App.scss';
 
 
 function App() {
-  const [socketInstance, setSocketInstance] = useState("");
+  const [socketInstance, setSocketInstance] = useState('');
   const [loading, setLoading] = useState(true);
-  const [buttonStatus, setButtonStatus] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(false);
 
   const handleClick = () => {
-    if (buttonStatus === false) {
-      setButtonStatus(true);
+    if (connectionStatus === false) {
+      setConnectionStatus(true);
     } else {
-      setButtonStatus(false);
+      setConnectionStatus(false);
     }
   };
 
+  const handleSubmit = () => {
+    console.log('handling submission', connectionStatus);
+    if (connectionStatus) {
+      socketInstance.emit('request', { query: 'Sparql query' });
+      console.log('emitted');
+    }
+  }
+
   useEffect(() => {
-    if (buttonStatus === true) {
-      const socket = io("http://127.0.0.1:5001", {
-        transports: ["websocket"],
+    if (connectionStatus === true) {
+      const socket = io('http://127.0.0.1:5001', {
+        transports: ['websocket'],
         cors: {
-          origin: "http://localhost:3000/",
+          origin: 'http://localhost:3000/',
         },
       });
 
-      // setSocketInstance(socket);
+      setSocketInstance(socket);
 
-      socket.on("connect", (data) => {
+      socket.on('connect', (data) => {
         console.log('connected: ', data);
       });
 
       setLoading(false);
 
-      socket.on("disconnect", (data) => {
+      socket.on('disconnect', (data) => {
         console.log('disconnected: ', data);
       });
 
@@ -50,24 +58,24 @@ function App() {
         socket.disconnect();
       };
     }
-  }, [buttonStatus]);
+  }, [connectionStatus]);
 
 
 
 
   return (
-    <div className="App">
+    <div className='App'>
       <header>
-        <img src={logo} className="App-logo" alt="logo" />
+        <img src={logo} className='App-logo' alt='logo' />
       </header>
-      <p>Hello</p>
 
-      {!buttonStatus ? (
-        <button onClick={handleClick}>turn chat on</button>
+      {!connectionStatus ? (
+        <button onClick={handleClick}>Connect</button>
       ) : (
         <>
-          <button onClick={handleClick}>turn chat off</button>
-          <div className="line">
+          <button onClick={handleSubmit}>Submit Query</button>
+          <button onClick={handleClick}>Disconnect</button>
+          <div className='line'>
             {!loading && <WebSocketCall socket={socketInstance} />}
           </div>
         </>

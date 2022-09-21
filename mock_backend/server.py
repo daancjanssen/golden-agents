@@ -1,12 +1,28 @@
-from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO,emit
+from flask import Flask, request, jsonify, render_template, current_app
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
+from threading import Lock
 
+thread = None
+thread_lock = Lock()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 CORS(app,resources={r'/*':{'origins':'*'}})
 socketio = SocketIO(app, cors_allowed_origins='*')
+
+def background_response(app):
+    """Send every 3 seconds data to frontend"""
+    with app.app_context():
+        for batch in range(10):
+            socketio.sleep(3)
+            data = [f'package - { batch * 100 + p }' for p in range(10)]
+            print('Emitting...')
+            socketio.emit(
+                'query_results', 
+                { 'data': data, 'id': request.sid }, 
+                broadcast=True
+            )
 
 @app.route('/')
 def api():
@@ -19,13 +35,22 @@ def connected():
     """event listener when client connects to the server"""
     print(request.sid)
     print('client has connected')
-    emit('connect',{ 'data':f'id: {request.sid} is connected' })
+    emit('connect', { 'data':f'id: {request.sid} is connected' })
 
-@socketio.on('data')
+@socketio.on('request')
 def handle_message(data):
-    """event listener when client types a message"""
-    print('data from the front end: ',str(data))
-    emit('data',{'data':data,'id':request.sid},broadcast=True)
+    """event listener for a request"""
+    global thread
+
+    print('data from the frontend: ',  str(data))
+    # emit('query_results', { 'data': [1, 2, 3, 4, 5], 'id': request.sid }, broadcast=False)
+    with thread_lock:
+        if thread == None:
+            threat = socketio.start_background_task(
+                background_response,
+                current_app._get_current_object()
+            )
+    emit('query_results', { 'data': [] })
 
 @socketio.on('disconnect')
 def disconnected():
@@ -36,5 +61,4 @@ def disconnected():
 
 if __name__ == '__main__':
     print('...Starting backend')
-    # app.run(debug=True, port=5001)
     socketio.run(app, host="127.0.0.1", debug=True, port=5001)
