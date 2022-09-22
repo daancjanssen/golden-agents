@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import logo from './images/logo.svg';
-import { Counter } from './features/counter/Counter';
-import { ServerStatus } from './features/serverstatus/ServerStatus';
-
 import WebSocketCall from './components/WebSocketCall';
 import { io } from 'socket.io-client';
 

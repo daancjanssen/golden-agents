@@ -10,16 +10,14 @@ This backend is based on the one that [can be found here](https://medium.com/@ad
 * flask
 * flask-cors
 * flask-socketio
-* gevent-websocket
 * eventlet (this one was pretty weird since it all seemed to work, but any connection attempt was refused. After installing eventlet I was able to establish a connection.)
 
 Installation:
 ```
-$ pip install flask
-$ pip install flask-socketio
-$ pip install flask-cors
-$ pip install gevent-websocket
-$ pip install eventlet
+$ pip3 install flask
+$ pip3 install flask-socketio
+$ pip3 install flask-cors
+$ pip3 install eventlet
 ```
 
 ## Running the mock server
@@ -40,3 +38,7 @@ frontend $ npm install socket.io-client
 ```
 
 All relevant code can be found in App.js and in the `components` folder.
+
+## Notes
+
+* I had to remove strict mode to ensure the socket related stuff wasn't executed multiple times in useEffect...
