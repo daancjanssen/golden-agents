@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logo from './images/logo.svg';
 import WebSocketCall from './components/WebSocketCall';
+import QueryBuilder from './components/QueryBuilder';
 import { io } from 'socket.io-client';
 
 import './styles/App.scss';
@@ -75,6 +76,7 @@ function App() {
           <div className='line'>
             {!loading && <WebSocketCall socket={socketInstance} />}
           </div>
+          <QueryBuilder />
         </>
       )}
     </div>
