@@ -29,11 +29,6 @@ public abstract class CrossingOperator extends AQLTree {
         this.type = TYPE.PROPERTY;
     }
 
-    @Override
-    public String getAQLLabel() {
-        return this.label;
-    }
-
     /**
      * Number of sub trees of this node type
      *
@@ -79,6 +74,6 @@ public abstract class CrossingOperator extends AQLTree {
 
     @Override
     public String getFirstResourceLabel() {
-        return this.label;
+        return this.resource.getLocalName();
     }
 }

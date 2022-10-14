@@ -1,6 +1,5 @@
 package org.uu.nl.goldenagents.controllers;
 
-import org.apache.jena.atlas.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.uu.nl.goldenagents.exceptions.AgentNotFoundException;
@@ -9,7 +8,6 @@ import org.uu.nl.goldenagents.netmodels.angular.CrudAgent;
 import org.uu.nl.goldenagents.netmodels.angular.SparqlResult;
 import org.uu.nl.goldenagents.services.AgentService;
 import org.uu.nl.goldenagents.services.DfService;
-import org.uu.nl.goldenagents.services.UserAgentService;
 import org.uu.nl.net2apl.core.agent.AgentCreationFailedException;
 import org.uu.nl.net2apl.core.platform.Platform;
 
@@ -23,20 +21,18 @@ import java.util.UUID;
 public class AgentController  {
 	
 	private final AgentService agentService;
-	private final UserAgentService userAgentService;
 	private final DfService dfService;
 
 	@Autowired
-	public AgentController(AgentService agentService, UserAgentService userAgentService, DfService dfService) {
+	public AgentController(AgentService agentService, DfService dfService) {
 		this.agentService = agentService;
-		this.userAgentService = userAgentService;
 		this.dfService = dfService;
 	}
 
 	@GetMapping("")
-	public CrudAgent index(@RequestParam(value = "agentID", required = false) String agentIDString) throws AgentNotFoundException, InvalidIdException {
+	public CrudAgent index(@RequestParam(value = "agentID", required = true) String agentIDString) throws AgentNotFoundException, InvalidIdException {
 		try {
-			UUID agentID = agentIDString == null ? userAgentService.getUserAgent() : UUID.fromString(agentIDString);
+			UUID agentID = UUID.fromString(agentIDString);
 			return agentService.get(agentID);
 		} catch (IllegalArgumentException e) {
 			throw new InvalidIdException();

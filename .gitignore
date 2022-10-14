@@ -76,4 +76,7 @@ backend/src/main/resources/testqueries/
 
 # Personal
 notes.md
+backend/.dockerignore
+backend/.gitignore
+backend/.sts4-cache/
 

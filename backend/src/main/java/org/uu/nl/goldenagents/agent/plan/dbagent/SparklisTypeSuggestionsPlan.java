@@ -13,7 +13,6 @@ import org.uu.nl.goldenagents.agent.context.DBAgentContext;
 import org.uu.nl.goldenagents.agent.context.query.DbTranslationContext;
 import org.uu.nl.goldenagents.agent.plan.MessagePlan;
 import org.uu.nl.goldenagents.netmodels.AqlDbTypeSuggestionWrapper;
-import org.uu.nl.goldenagents.netmodels.fipa.EntityList;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageContentWrapper;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageHeader;
 import org.uu.nl.goldenagents.sparql.CachedModel;
@@ -30,7 +29,6 @@ import org.uu.nl.net2apl.core.platform.PlatformNotFoundException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -58,10 +56,9 @@ public class SparklisTypeSuggestionsPlan extends MessagePlan {
     @Override
     public void executeOnce(PlanToAgentInterface planInterface, ACLMessage receivedMessage, GAMessageHeader header, FIPASendableObject content) throws PlanExecutionError {
         this.planInterface = planInterface;
-        EntityList<String> entityList = EntityList.fromACLMessage(receivedMessage);
         DBAgentContext context = planInterface.getContext(DBAgentContext.class);
         DbTranslationContext translator = planInterface.getContext(DbTranslationContext.class);
-        List<String> entitiesValues = this.getEntities(entityList.getForFocus(), 300); // TODO what value can / should we use here?
+        List<String> entitiesValues = this.getEntities(300); // TODO what value can / should we use here?
 
         // Create query builders for each suggestion type
         Var var = Var.alloc("x");
@@ -107,7 +104,7 @@ public class SparklisTypeSuggestionsPlan extends MessagePlan {
                 classSuggestions.getFirst(),
                 forwardCrossingProperties,
                 backwardCrossingProperties,
-                entityList.getForFocus() // TODO, this needs to be the AQL Query focus node name
+                UUID.fromString(this.message.getConversationId())
         );
 
         ACLMessage response = message.createReply(planInterface.getAgentID(), Performative.INFORM_REF);
@@ -126,10 +123,10 @@ public class SparklisTypeSuggestionsPlan extends MessagePlan {
      * @param maxSize Maximum number of entities in this list (to avoid stack overflow in query construction)
      * @return List of entities, reduced to maxSize
      */
-    private List<String> getEntities(UUID forFocus, int maxSize) {
-        EntityList<String> entityList = new EntityList<>(forFocus, new ArrayList<>());
+    private List<String> getEntities(int maxSize) {
+        CachedModel.EntityList<String> entityList = new CachedModel.EntityList<>(new ArrayList<>());
         try {
-            entityList = (EntityList<String>) ((GAMessageContentWrapper) message.getContentObject()).getContent();
+            entityList = (CachedModel.EntityList<String>) ((GAMessageContentWrapper) message.getContentObject()).getContent();
         } catch (UnreadableException e) {
             logger.log(getClass(), e);
         }

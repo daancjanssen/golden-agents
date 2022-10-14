@@ -13,7 +13,7 @@ public class VariableController {
     private HashMap<String, Integer> labelStore;
     private int labellessIndex;
     private Var focusVariable;
-    private AQLTree focus; // for debugging
+    private UUID focusID;
 
     /**
      * Default constructor
@@ -46,15 +46,10 @@ public class VariableController {
      * @return          ARQ Var
      */
     public Var getVariableForLabel(String label, int index) {
-        try {
-            if (index == 0) {
-                return Var.alloc(label);
-            } else {
-                return Var.alloc(String.format("%s_%s", label, indexToVariable(index)));
-            }
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-            return Var.alloc("a");
+        if(index == 0) {
+            return Var.alloc(label);
+        } else {
+            return Var.alloc(String.format("%s_%s", label, indexToVariable(index)));
         }
     }
 
@@ -103,15 +98,15 @@ public class VariableController {
     private static String indexToVariable(int index) {
         int letter = Math.floorMod(index, 26);
         int number = Math.floorDiv(index, 26);
-        return String.format("%s%s", (char) (letter + 97), number > 0 ? String.valueOf(number) : "");
+        return String.format("%s%s", String.valueOf((char)(letter + 97)), number > 0 ? String.valueOf(number) : "");
     }
 
-    public void setQueryFocus(AQLTree focus) {
-        this.focus = focus;
+    public void setQueryFocusID(UUID focus) {
+        this.focusID = focus;
     }
 
     public UUID getQueryFocusID() {
-        return this.focus.getFocusID();
+        return this.focusID;
     }
 
 }

@@ -27,11 +27,10 @@ database_icon = "dns"
         icon = "call_split"
         localname = "Broker"
 
-    [agents.user]
-        type = "user"
-        icon = "person"
-        localname = "User"
-
+#    [agents.user]
+#        type = "user"
+#        icon = "person"
+#        localname = "User"
 
 [databases]
     [databases.ecartico]

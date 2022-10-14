@@ -35,9 +35,9 @@ public class MessageController {
 	}
 
 	@GetMapping("agenthistory")
-	public List<CrudMessage> agentMessageHistory(@RequestParam(value = "agentID", required = false) String agentIDString) throws AgentNotFoundException {
+	public List<CrudMessage> agentMessageHistory(@RequestParam(value = "agentID", required = true) String agentIDString) throws AgentNotFoundException {
 		try {
-			UUID agentID = agentIDString == null ? this.userAgentService.getUserAgent() : UUID.fromString(agentIDString);
+			UUID agentID = UUID.fromString(agentIDString);
 			return service.agentHistory(agentID);
 		} catch (IllegalArgumentException e) {
 			throw new InvalidIdException();

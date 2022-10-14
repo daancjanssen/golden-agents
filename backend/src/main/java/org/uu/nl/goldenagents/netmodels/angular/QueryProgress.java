@@ -15,8 +15,6 @@ public class QueryProgress<T> {
 	private boolean finished;
 	private List<QueryProgressSubResult> subresults;
 	
-	public QueryProgress() {}
-
 	public QueryProgress(String queryID, QueryProgressType type, boolean finished) {
 		super();
 		this.queryID = queryID;

@@ -5,7 +5,6 @@ import org.apache.jena.sparql.core.Var;
 import org.uu.nl.net2apl.core.fipa.acl.FIPASendableObject;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -115,18 +114,5 @@ public abstract class AQLTree implements FIPASendableObject {
         if(this.id.equals(controller.getQueryFocusID())) {
             controller.setFocusVariable(var);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AQLTree aqlTree = (AQLTree) o;
-        return Objects.equals(id, aqlTree.id) && Objects.equals(parent, aqlTree.parent) && type == aqlTree.type;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, parent, type);
     }
 }

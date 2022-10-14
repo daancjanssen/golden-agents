@@ -1,7 +1,6 @@
 package org.uu.nl.goldenagents.aql.feature;
 
 import org.apache.jena.sparql.algebra.Op;
-import org.apache.jena.sparql.algebra.op.OpFilter;
 import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.aql.AQLTree;
 import org.uu.nl.goldenagents.aql.VariableController;
@@ -14,7 +13,7 @@ import java.util.UUID;
 public class NamedResource extends hasResource {
 
     public NamedResource(SerializableResourceImpl resource) {
-        super(resource, resource.getLabel());
+        super(resource);
     }
 
     public NamedResource(SerializableResourceImpl resource, String label) {
@@ -24,7 +23,6 @@ public class NamedResource extends hasResource {
     public Op toARQ(Var var, VariableController controller) {
         // See @code{Exclusion} for the issue here
         checkIfFocus(var, controller);
-        OpFilter filter;
         return null;
     }
 

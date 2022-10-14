@@ -76,9 +76,7 @@ public class UserQueryTrigger implements FIPASendableObject, Trigger {
 
     public static UserQueryTrigger fromACLMessage(ACLMessage messageWithQueryTrigger) {
         try {
-            GAMessageContentWrapper contentWrapper = (GAMessageContentWrapper) messageWithQueryTrigger.getContentObject();
-            FIPASendableObject content = contentWrapper.getContent();
-            return (UserQueryTrigger) content;
+            return (UserQueryTrigger) ((GAMessageContentWrapper) messageWithQueryTrigger.getContentObject()).getContent();
         } catch (UnreadableException e) {
             Platform.getLogger().log(UserQueryTrigger.class, e);
             return null;

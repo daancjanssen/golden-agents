@@ -3,12 +3,11 @@ package org.uu.nl.goldenagents.agent.plan.broker.suggestions;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntProperty;
 import org.uu.nl.goldenagents.agent.context.BrokerContext;
-import org.uu.nl.goldenagents.agent.context.BrokerSearchSuggestionsContext;
 import org.uu.nl.goldenagents.agent.plan.MessagePlan;
+import org.uu.nl.goldenagents.aql.AQLTree;
 import org.uu.nl.goldenagents.netmodels.angular.AQLSuggestions;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageContentWrapper;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageHeader;
-import org.uu.nl.goldenagents.netmodels.fipa.UserQueryTrigger;
 import org.uu.nl.net2apl.core.agent.PlanToAgentInterface;
 import org.uu.nl.net2apl.core.defaults.messenger.MessageReceiverNotFoundException;
 import org.uu.nl.net2apl.core.fipa.acl.ACLMessage;
@@ -29,22 +28,12 @@ import java.util.*;
 public abstract class ASuggestSearchOptionsPlan extends MessagePlan {
 
     protected PlanToAgentInterface planInterface;
-    protected UserQueryTrigger userQueryTrigger;
-    protected String conversationID;
+    protected AQLTree query;
     protected UUID focus;
-    protected BrokerContext brokerContext;
-    protected BrokerSearchSuggestionsContext searchSuggestionsContext;
+    protected BrokerContext context;
 
     public ASuggestSearchOptionsPlan(ACLMessage message, GAMessageHeader header, FIPASendableObject content) {
         super(message, header, content);
-    }
-
-    protected void beforePlanStart() {
-
-    }
-
-    protected void afterPlanStart() {
-
     }
 
     /**
@@ -59,15 +48,11 @@ public abstract class ASuggestSearchOptionsPlan extends MessagePlan {
     @Override
     public void executeOnce(PlanToAgentInterface planInterface, ACLMessage receivedMessage, GAMessageHeader header, FIPASendableObject content) throws PlanExecutionError {
         this.planInterface = planInterface;
-        this.brokerContext = planInterface.getContext(BrokerContext.class);
-        this.searchSuggestionsContext = planInterface.getContext(BrokerSearchSuggestionsContext.class);
-        this.conversationID = message.getConversationId();
-        this.userQueryTrigger = UserQueryTrigger.fromACLMessage(receivedMessage);
-        if (this.userQueryTrigger.getAql() == null) {
-            this.userQueryTrigger.setAql(brokerContext.getCachedModel(this.message.getConversationId()).getUserQueryTrigger().getAql());
+        this.context = planInterface.getContext(BrokerContext.class);
+        this.query = (AQLTree) content;
+        if(this.query == null) {
+            this.query = context.getCachedModel(this.message.getConversationId()).getUserQueryTrigger().getAql().getQueryTree();
         }
-
-        beforePlanStart();
 
         logger.log(getClass(), "Starting to aggregate classes suggestions for search");
         List<AQLSuggestions.TypeSuggestion> classList = generateClassList();
@@ -79,8 +64,7 @@ public abstract class ASuggestSearchOptionsPlan extends MessagePlan {
         logger.log(getClass(), String.format("Sending suggestions with %d classes, %d properties and %d instances as message to user",
                 classList.size(), propertyList.size(), instanceList.size()
         ));
-        returnMessage(new AQLSuggestions(classList, propertyList, instanceList, this.userQueryTrigger.getAql().getFocusName()));
-        afterPlanStart();
+        returnMessage(new AQLSuggestions(classList, propertyList, instanceList, this.query.getFocusID()));
     }
 
 
@@ -103,12 +87,12 @@ public abstract class ASuggestSearchOptionsPlan extends MessagePlan {
 
     protected Set<OntClass> findUpperClasses(OntClass ontClass) {
         if(!ontClass.hasSuperClass() || ontClass.equals(ontClass.getSuperClass())) {
-            return ontClass.isAnon() || !this.brokerContext.getOntologyClasses().contains(ontClass)
+            return ontClass.isAnon() || !this.context.getOntologyClasses().contains(ontClass)
                     ? Collections.emptySet() : Collections.singleton(ontClass);
         } else {
             final Set<OntClass> superClasses = new HashSet<>();
             ontClass.listSuperClasses(true).forEachRemaining(x -> superClasses.addAll(findUpperClasses(x)));
-            if(superClasses.isEmpty() && this.brokerContext.getOntologyClasses().contains(ontClass))
+            if(superClasses.isEmpty() && this.context.getOntologyClasses().contains(ontClass))
                 superClasses.add(ontClass);
             return superClasses;
         }

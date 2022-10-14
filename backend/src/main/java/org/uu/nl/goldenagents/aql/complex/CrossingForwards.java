@@ -7,9 +7,7 @@ import org.apache.jena.sparql.algebra.op.OpJoin;
 import org.apache.jena.sparql.core.BasicPattern;
 import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.aql.AQLTree;
-import org.uu.nl.goldenagents.aql.MostGeneralQuery;
 import org.uu.nl.goldenagents.aql.VariableController;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
 import org.uu.nl.goldenagents.netmodels.jena.SerializableResourceImpl;
 
 import java.util.UUID;
@@ -31,6 +29,16 @@ public class CrossingForwards extends CrossingOperator {
 
     public CrossingForwards(SerializableResourceImpl resource, AQLTree subquery, String label) {
         super(resource, subquery, label);
+    }
+
+    /**
+     * AQL label representing this node in the AQL query
+     *
+     * @return String
+     */
+    @Override
+    public String getAQLLabel() {
+        return "that is the " + this.label + " of something";
     }
 
     public Op toARQ(Var var, VariableController controller) {

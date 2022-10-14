@@ -6,8 +6,6 @@ import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.aql.AQLTree;
 import org.uu.nl.goldenagents.aql.MostGeneralQuery;
 import org.uu.nl.goldenagents.aql.VariableController;
-import org.uu.nl.goldenagents.aql.feature.TypeSpecification;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
 
 public class Intersection extends BinaryAQLInfixOperator {
 
@@ -25,6 +23,8 @@ public class Intersection extends BinaryAQLInfixOperator {
     @Override
     public String getAQLLabel() {
         return AQL_LABEL;
+//        return leftChild instanceof Intersection || rightChild instanceof Intersection ?
+//                "" : AQL_LABEL;
     }
 
     @Override

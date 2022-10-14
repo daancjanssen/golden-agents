@@ -3,9 +3,10 @@ package org.uu.nl.goldenagents.netmodels.angular;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntProperty;
 import org.apache.jena.ontology.OntResource;
-import org.apache.jena.rdf.model.Resource;
-import org.uu.nl.goldenagents.netmodels.jena.SerializableResourceImpl;
+import org.apache.jena.rdf.model.impl.ResourceImpl;
+import org.apache.jena.vocabulary.RDFS;
 import org.uu.nl.net2apl.core.fipa.acl.FIPASendableObject;
+import org.uu.nl.net2apl.core.platform.Platform;
 
 import java.io.Serializable;
 import java.util.*;
@@ -29,7 +30,7 @@ public class AQLSuggestions implements Serializable, FIPASendableObject {
      * @param propertyList  List of properties that can be suggested
      * @param instanceList  List of instances that can be suggested
      */
-    public AQLSuggestions(UUID queryID, List<OntClass> classList, List<OntProperty> propertyList, List<SerializableResourceImpl> instanceList) {
+    public AQLSuggestions(UUID queryID, List<OntClass> classList, List<OntProperty> propertyList, List<ResourceImpl> instanceList) {
         this.focusID = queryID;
         this.classList = classList.stream().filter(x -> !x.isAnon() && !x.hasSuperClass()).map(x -> new TypeSuggestion(x, Collections.emptySet())).collect(Collectors.toList());
         this.propertyList = propertyList.stream().map(x -> new TypeSuggestion(x, false, Collections.emptySet())).collect(Collectors.toList());
@@ -165,18 +166,36 @@ public class AQLSuggestions implements Serializable, FIPASendableObject {
     }
 
     public static class InstanceSuggestion implements Serializable {
-        private final String type = "instance";
-        private final String label;
-        private final String target;
-        private final String id;
-        private final String title;
+        private String label;
+        private String target;
+        private String id;
+        private String title;
 
-
-        public InstanceSuggestion(Resource individual) {
+        public InstanceSuggestion(ResourceImpl individual) {
             this.target = individual.getURI();
-            this.label = SerializableResourceImpl.getLabel(individual);
+            this.label = this.setLabel(individual);
             this.id = "random. DO we need this?";
             this.title = this.target;
+        }
+
+        private String setLabel(ResourceImpl individual) {
+            // TODO ideally we use rdfs:label, but this property needs to be included in each DB query if we want to extract it
+            String label;
+            if(individual.hasProperty(RDFS.label)) {
+                label = individual.getProperty(RDFS.label).getString();
+            } else if(!individual.getLocalName().isEmpty()) {
+                label = individual.getLocalName();
+            } else {
+                String uri = individual.getURI();
+                String nameSpace = individual.getNameSpace();
+                if(nameSpace.equalsIgnoreCase(uri)) {
+                    label = uri.substring(uri.lastIndexOf("/") + 1);
+                } else {
+                    label = uri.substring(nameSpace.length());
+                }
+            }
+            Platform.getLogger().log(getClass(), "URI " + individual.getURI() + " now has label " + label);
+            return label;
         }
 
         public String getLabel() {
@@ -193,10 +212,6 @@ public class AQLSuggestions implements Serializable, FIPASendableObject {
 
         public String getTitle() {
             return title;
-        }
-
-        public String getType() {
-            return type;
         }
     }
 }

@@ -34,7 +34,7 @@ public class TypeSpecification extends hasResource {
      */
     @Override
     public String getAQLLabel() {
-        return super.getAQLLabel();
+        return "that is a " + super.getAQLLabel();
     }
 
     public Op toARQ(Var var, VariableController controller) {

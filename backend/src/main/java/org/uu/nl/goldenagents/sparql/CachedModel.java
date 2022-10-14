@@ -50,6 +50,9 @@ public class CachedModel {
 
 	private UserQueryTrigger trigger;
 
+	private ArrayList<ResourceImpl> focusEntities;
+	private EntityList<String> serializableFocusEntities;
+
 	/**
 	 * Whether the user agent expects suggestions for the query to be generated
 	 * based on this result
@@ -186,10 +189,6 @@ public class CachedModel {
 		this.totalSize += addedItems;
 		return addedItems;
 	}
-
-	public Model getPartialAgentModel(AgentID agentID) {
-		return this.partialModels.get(agentID);
-	}
 	
 	private void finalizeCachedModel() {
 		this.partialModels.forEach((aId, partial) -> {
@@ -222,10 +221,6 @@ public class CachedModel {
 	 */
 	public synchronized int getUnsuccessfullReplySize() {
 		return (int) this.participatingAgents.values().stream().filter(v -> v.equals(SourceReplyStatus.FAILED)).count();
-	}
-
-	public InfModel getModel() {
-		return cachedModel;
 	}
 
 	/**
@@ -287,6 +282,76 @@ public class CachedModel {
 		}
 	}
 
+	public ArrayList<ResourceImpl> getEntitiesAtFocus() {
+		return this.focusEntities;
+	}
+
+	public EntityList<String> getSerializableFocusEntities() {
+		return this.serializableFocusEntities;
+	}
+
+	/**
+	 * Add hoc and slow method to find entities that actually occur in participating sources.
+	 * Probably a more general approach is required that makes clever use of SPARQL SERVICE keyword, to query over
+	 * all the partial models. This approach could potentially also be used for detailed provenance information, but
+	 * it requires some extra thinking on my part for which the capacity is currently missing
+	 *
+	 * @param query	Yes
+	 * @return		Also yes
+	 */
+	public HashMap<AgentID, EntityList<String>> getEntitiesAtFocus(Query query) {
+		this.focusEntities = new ArrayList<>();
+		this.serializableFocusEntities = new EntityList<>();
+		String var = query.getProjectVars().get(0).toString(); // TODO Don't take first var in projection; take FOCUS var
+
+		// Find participating agents from provenance tracer
+		ProvenanceTracer t = getProvenanceTracer();
+		Map<String, Set<AgentID>> mappedSources = t.getMappedSources();
+		Set<AgentID> relevantAgents = mappedSources.get(var);
+
+		if(relevantAgents == null)  {
+			Platform.getLogger().log(getClass(), Level.SEVERE,"No relevant agents found. This has to be an error");
+			relevantAgents = new HashSet<>();
+		}
+
+		// Create aggregator for results
+		HashMap<AgentID, EntityList<String>> relevantEntities = new HashMap<>();
+		relevantAgents.iterator().forEachRemaining(x -> relevantEntities.put(x, new EntityList<>()));
+
+		// Start query process
+		query.setDistinct(true);
+		try(QueryExecution exec = QueryExecutionFactory.create(query, this.cachedModel)) {
+			ResultSet r = exec.execSelect();
+			while(r.hasNext()) {
+				RDFNode n = r.next().get(var);
+				if(n.canAs(ResourceImpl.class)) {
+					this.focusEntities.add(n.as(ResourceImpl.class));
+					this.serializableFocusEntities.addEntity(n.asResource().getURI());
+				} else if (n.canAs(Literal.class)) {
+					Platform.getLogger().log(getClass(), Level.WARNING, "Can't convert node " + n.toString() + " to Individual.class but adding as Literal");
+					this.serializableFocusEntities.addEntity(n.asLiteral().getString());
+				} else {
+					Platform.getLogger().log(getClass(), Level.WARNING, "Can't convert node " + n.toString() + " to Individual.class");
+				}
+				for(AgentID aid : relevantAgents) {
+					if(this.partialModels.get(aid).containsResource(n)) {
+						try {
+							if (n.isResource() && n.canAs(ResourceImpl.class)) {
+								relevantEntities.get(aid).addEntity(n.asResource().getURI());
+							} else if (n.isLiteral() && n.canAs(Literal.class)) {
+								relevantEntities.get(aid).addEntity(n.asLiteral().getString());
+							}
+						} catch (Exception e) {
+							Platform.getLogger().log(getClass(), e);
+						}
+					}
+				}
+			}
+		}
+
+		return relevantEntities;
+	}
+
 	public ProvenanceTracer getProvenanceTracer() {
 		ProvenanceTracer pt = new ProvenanceTracer(this.queryInfo);
 		pt.trace();
@@ -313,12 +378,8 @@ public class CachedModel {
 		this.suggestingAgents.put(aid, SourceReplyStatus.WAITING);
 	}
 
-	public int getNumExpectedSuggestionAgents() {
+	public int getExpectedSuggestionAgents() {
 		return this.suggestingAgents.size();
-	}
-
-	public List<AgentID> getExpectedSuggestionAgents() {
-		return new ArrayList<>(this.suggestingAgents.keySet());
 	}
 
 	public boolean querySuggestionsDone() {
@@ -342,6 +403,10 @@ public class CachedModel {
 
 	public void setTrigger(UserQueryTrigger trigger) {
 		this.trigger = trigger;
+	}
+
+	public InfModel getCachedModel() {
+		return cachedModel;
 	}
 
 	/**
@@ -371,6 +436,26 @@ public class CachedModel {
 		 */
 		private boolean isSuccess() {
 			return this.success;
+		}
+	}
+
+	public static class EntityList<T> implements FIPASendableObject {
+		private ArrayList<T> entities;
+
+		public EntityList(ArrayList<T> entities) {
+			this.entities = entities;
+		}
+
+		public EntityList() {
+			this.entities = new ArrayList<>();
+		}
+
+		public void addEntity(T entity) {
+			this.entities.add(entity);
+		}
+
+		public ArrayList<T> getEntities() {
+			return this.entities;
 		}
 	}
 }

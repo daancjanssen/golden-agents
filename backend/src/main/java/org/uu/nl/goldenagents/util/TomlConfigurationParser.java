@@ -119,7 +119,7 @@ public class TomlConfigurationParser {
                 UiAgentConfig config = new UiAgentConfig(dataSource, icon, CrudAgent.AgentType.DB);
                 config.addConfigurationToArguments(arguments);
                 new SparqlAgentConfig(dataSource).addConfigurationToArguments(arguments);
-                createAgent(platform, arguments, config.getLocalName(), false);
+                createAgent(platform, arguments, config.getLocalName(), false, this.serverEventBus);
             } catch (IllegalArgumentException | AgentCreationFailedException e) {
                 throw new IllegalArgumentException(
                         String.format(
@@ -134,7 +134,13 @@ public class TomlConfigurationParser {
         }
     }
 
-    private void createAgent(Platform platform, AgentArguments arguments, String localName, boolean isDF) throws AgentCreationFailedException {
+    public static Agent createAgent(
+            Platform platform,
+            AgentArguments arguments,
+            String localName,
+            boolean isDF,
+            SseEventBus eventBus
+    ) throws AgentCreationFailedException {
         AgentID agentID = createAgentID(platform, localName);
         Agent agent;
         if (isDF) {
@@ -143,14 +149,16 @@ public class TomlConfigurationParser {
             agent = new Agent(platform, arguments, agentID);
         }
 
-        agent.addContext(new DirectSsePublisher(this.serverEventBus, agent.getAID()));
+        agent.addContext(new DirectSsePublisher(eventBus, agent.getAID()));
         agent.addContext(new CrudMessagePublisher(agent));
 
         Platform.getLogger().log(
                 AgentService.class, Level.INFO,
                 String.format("Created %s agent from startup configuration", localName)
         );
-        this.serverEventBus.handleEvent(SseEvent.of("agent_create", localName));
+        eventBus.handleEvent(SseEvent.of("agent_create", localName));
+
+        return agent;
     }
 
     private void parseAgents(Platform platform, TomlParseResult result) throws IllegalArgumentException {
@@ -192,7 +200,7 @@ public class TomlConfigurationParser {
                     break;
             }
             try {
-                createAgent(platform, arguments, uiAgentConfig.getLocalName(), isDF);
+                createAgent(platform, arguments, uiAgentConfig.getLocalName(), isDF, this.serverEventBus);
             } catch (AgentCreationFailedException e) {
                 throw new IllegalArgumentException(
                     String.format(
@@ -229,7 +237,7 @@ public class TomlConfigurationParser {
                 .dest("agentConfiguration");
     }
 
-    private AgentID createAgentID(Platform platform, String localName) {
+    private static AgentID createAgentID(Platform platform, String localName) {
         AgentID agentID = null;
         try {
             if (localName == null) {
@@ -247,8 +255,8 @@ public class TomlConfigurationParser {
                 agentID = new AgentID(uri);
             }
         } catch (URISyntaxException e) {
-            LOGGER.log(getClass(), Level.SEVERE, "Failed to create agent ID for local name " + localName);
-            LOGGER.log(getClass(), Level.SEVERE, e);
+            LOGGER.log(TomlConfigurationParser.class, Level.SEVERE, "Failed to create agent ID for local name " + localName);
+            LOGGER.log(TomlConfigurationParser.class, Level.SEVERE, e);
         }
         return agentID;
     }

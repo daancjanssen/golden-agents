@@ -1,5 +1,6 @@
 package org.uu.nl.goldenagents.agent.plan.user;
 
+import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.agent.context.registration.DFRegistrationContext;
 import org.uu.nl.goldenagents.agent.trigger.user.AQLQueryChangedExternalTrigger;
 import org.uu.nl.goldenagents.aql.MostGeneralQuery;
@@ -71,8 +72,7 @@ public class RequestSuggestionsPlan extends RunOncePlan {
     }
 
     private GAMessageContentWrapper createSimpleSuggestionRequest() {
-        UserQueryTrigger t = new UserQueryTrigger(this.trigger.getQuery(), GAMessageHeader.REQUEST_SUGGESTIONS);
-        return new GAMessageContentWrapper(GAMessageHeader.REQUEST_SUGGESTIONS, t);
+        return new GAMessageContentWrapper(GAMessageHeader.REQUEST_SUGGESTIONS, this.trigger.getQueryTree());
     }
 
     private GAMessageContentWrapper requestQueryBasedSuggestions() {

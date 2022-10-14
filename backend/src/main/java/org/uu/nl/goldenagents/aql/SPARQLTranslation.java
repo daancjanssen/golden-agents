@@ -21,13 +21,13 @@ public class SPARQLTranslation implements Serializable {
     public SPARQLTranslation(AQLQuery query) {
         this.query = query;
         VariableController controller = new VariableController();
-        controller.setQueryFocus(query.getFocus());
+        controller.setQueryFocusID(query.getFocusName());
         String firstLabel = query.getQueryTree().getFirstResourceLabel();
         Var firstVar = firstLabel == null ? controller.getVariable() : controller.getVariableForLabel(firstLabel);
         Op algebra = this.query.getQueryTree().toARQ(firstVar, controller);
         this.focusVar = controller.getFocusVariable();
 
-        Platform.getLogger().log(getClass(), Level.SEVERE, String.format("Focus variable is now \"?%s\"", this.focusVar.getVarName()));
+        Platform.getLogger().log(getClass(), Level.SEVERE, "Focus variable is now " + this.focusVar.getVarName());
 
         this.sparqlTranslation = Algebra.optimize(algebra);
     }

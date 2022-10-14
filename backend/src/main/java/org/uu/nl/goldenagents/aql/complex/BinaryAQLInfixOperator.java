@@ -1,7 +1,6 @@
 package org.uu.nl.goldenagents.aql.complex;
 
 import org.uu.nl.goldenagents.aql.AQLTree;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLQueryJsonObject;
 
 import java.util.Arrays;
 import java.util.List;

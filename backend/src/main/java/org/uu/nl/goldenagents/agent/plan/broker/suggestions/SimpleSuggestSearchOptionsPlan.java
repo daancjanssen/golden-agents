@@ -2,10 +2,9 @@ package org.uu.nl.goldenagents.agent.plan.broker.suggestions;
 
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntProperty;
-import org.uu.nl.goldenagents.agent.context.BrokerSearchSuggestionsContext;
+import org.uu.nl.goldenagents.agent.plan.broker.suggestions.ASuggestSearchOptionsPlan;
 import org.uu.nl.goldenagents.netmodels.angular.AQLSuggestions;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageHeader;
-import org.uu.nl.goldenagents.netmodels.fipa.UserQueryTrigger;
 import org.uu.nl.net2apl.core.fipa.acl.ACLMessage;
 import org.uu.nl.net2apl.core.fipa.acl.FIPASendableObject;
 
@@ -24,20 +23,14 @@ public class SimpleSuggestSearchOptionsPlan extends ASuggestSearchOptionsPlan {
         super(message, header, content);
     }
 
-    @Override
-    protected void beforePlanStart() {
-        BrokerSearchSuggestionsContext context = this.planInterface.getContext(BrokerSearchSuggestionsContext.class);
-        context.addSubscription(this.message, this.header);
-    }
-
     /**
      * Generate a list of classes the current query can be intersected with at the current focus
      */
     @Override
     protected List<AQLSuggestions.TypeSuggestion> generateClassList() {
-        Set<OntClass> upperClasses = findUpperClasses(this.brokerContext.getOntologyClasses().iterator());
+        Set<OntClass> upperClasses = findUpperClasses(this.context.getOntologyClasses().iterator());
         return upperClasses.stream()
-                .map(ontClass -> new AQLSuggestions.TypeSuggestion(ontClass, this.brokerContext.getOntologyClasses()))
+                .map(ontClass -> new AQLSuggestions.TypeSuggestion(ontClass, this.context.getOntologyClasses()))
                 .collect(Collectors.toList());
     }
 
@@ -46,13 +39,13 @@ public class SimpleSuggestSearchOptionsPlan extends ASuggestSearchOptionsPlan {
      */
     @Override
     protected List<AQLSuggestions.TypeSuggestion> generatePropertyList() {
-        Set<OntProperty> upperProperties = findUpperProperties(this.brokerContext.getOntologyProperties().iterator());
+        Set<OntProperty> upperProperties = findUpperProperties(this.context.getOntologyProperties().iterator());
         final List<AQLSuggestions.TypeSuggestion> suggestions = new ArrayList<>();
         Iterator<OntProperty> it = upperProperties.iterator();
         while(it.hasNext()) {
             OntProperty ontProperty = it.next();
-            suggestions.add(new AQLSuggestions.TypeSuggestion(ontProperty, true, this.brokerContext.getOntologyProperties()));
-            suggestions.add(new AQLSuggestions.TypeSuggestion(ontProperty, false, this.brokerContext.getOntologyProperties()));
+            suggestions.add(new AQLSuggestions.TypeSuggestion(ontProperty, true, this.context.getOntologyProperties()));
+            suggestions.add(new AQLSuggestions.TypeSuggestion(ontProperty, false, this.context.getOntologyProperties()));
         }
         return suggestions;
     }

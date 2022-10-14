@@ -3,7 +3,6 @@ package org.uu.nl.goldenagents.agent.plan.broker.splitquery;
 import org.apache.jena.query.QueryException;
 import org.uu.nl.goldenagents.agent.context.BrokerContext;
 import org.uu.nl.goldenagents.agent.context.BrokerPrefixNamespaceContext;
-import org.uu.nl.goldenagents.agent.context.BrokerSearchSuggestionsContext;
 import org.uu.nl.goldenagents.agent.context.DirectSsePublisher;
 import org.uu.nl.goldenagents.agent.context.query.QueryProgressType;
 import org.uu.nl.goldenagents.agent.plan.MessagePlan;
@@ -134,11 +133,6 @@ public abstract class SplitQueryPlan extends MessagePlan {
 			return;
 		}
 
-		if (this.suggestionsRequested) {
-			BrokerSearchSuggestionsContext context = planInterface.getContext(BrokerSearchSuggestionsContext.class);
-			context.addSubscription(receivedMessage, header);
-		}
-
 		processQuery();
 	}
 
@@ -185,36 +179,6 @@ public abstract class SplitQueryPlan extends MessagePlan {
 	}
 
 	/**
-	 * Create a cached model for new conversations, or reuse an existing cached model if present
-	 * @return The cached model to use for query results for the current query
-	 */
-	private CachedModel ensureModelPresent() {
-		BrokerSearchSuggestionsContext searchSuggestionsContext = planInterface.getContext(BrokerSearchSuggestionsContext.class);
-
-		BrokerSearchSuggestionsContext.SearchSuggestionSubscription subscription = searchSuggestionsContext.getSubscription(this.conversationID);
-
-		CachedModel model = null;
-		if (subscription != null) {
-			model = subscription.getModel();
-		} else {
-			searchSuggestionsContext.addSubscription(this.message, this.header);
-			subscription = searchSuggestionsContext.getSubscription(this.conversationID);
-		}
-
-		if (model == null) {
-			model = this.context.createCachedModel(this.conversationID, this.queryRequest, this.queryInfo);
-			subscription.setModel(model);
-			logger.log(getClass(), Level.FINE, "Created cached model");
-		} else {
-			this.context.addCachedModel(this.conversationID, model);
-			logger.log(getClass(), Level.FINE, "Reusing cached model");
-		}
-		model.setSuggestionsExpected(this.suggestionsRequested);
-
-		return model;
-	}
-
-	/**
 	 * Once parsing of the query has succeeded, try to match data source agents to parts of the query
 	 */
 	private void processQuery() {
@@ -222,7 +186,9 @@ public abstract class SplitQueryPlan extends MessagePlan {
 		QueryProgress<Integer> queryProgress =
 				new QueryProgress<>(this.queryID, QueryProgressType.SUBQUERY_SENT, 0, false);
 
-		CachedModel model = ensureModelPresent();
+		CachedModel model = this.context.createCachedModel(this.conversationID, this.queryRequest, this.queryInfo);
+		model.setSuggestionsExpected(this.suggestionsRequested);
+        logger.log(getClass(), Level.FINE, "Created cached model");
 
 		List<AgentQuery> agentQueries = null;
 		try {
@@ -321,6 +287,7 @@ public abstract class SplitQueryPlan extends MessagePlan {
 	 * @param e 	Exception object thrown because of syntax errors encountered during parsing
 	 */
 	private void informQueryError(Exception e) {
+		DirectSsePublisher.queryFailed(this.queryID, e);
 		ACLMessage errorMessage = this.message.createReply(this.planInterface.getAgentID(), Performative.NOT_UNDERSTOOD);
 		try {
 			errorMessage.setContentObject(

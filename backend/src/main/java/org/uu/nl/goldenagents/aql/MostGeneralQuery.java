@@ -3,8 +3,6 @@ package org.uu.nl.goldenagents.aql;
 import org.apache.jena.sparql.algebra.Op;
 import org.apache.jena.sparql.algebra.op.OpBGP;
 import org.apache.jena.sparql.core.Var;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLQueryJsonObject;
 
 import java.util.ArrayList;
 import java.util.List;

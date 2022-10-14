@@ -78,6 +78,12 @@ public enum GAMessageHeader {
 	REQUEST_PREFIX_MAPPING(400),
 
 	/**
+	 * The user requests a partial search for a partial query constructed in the query builder.
+	 * Apart from results, suggestions for the next change in the query should be provided
+	 */
+	USER_PARTIAL_SEARCH(306),
+
+	/**
 	 * Fallback
 	 */
 	UNKNOWN(0),

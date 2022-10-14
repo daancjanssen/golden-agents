@@ -47,6 +47,10 @@ public class BrokerMessagePlanScheme extends RegistrationPlanScheme {
 				return new SplitQuerySimple(receivedMessage, header, content);
 			case USER_INTELLIGENT_SEARCH:
 				return new SplitQueryExpertise(receivedMessage, header, content);
+			case USER_PARTIAL_SEARCH:
+				SplitQueryPlan p = new SplitQueryExpertise(receivedMessage, header, content);
+				p.setSuggestionsRequested(true);
+				return p;
 			case REQUEST_SUGGESTIONS:
 				return new SimpleSuggestSearchOptionsPlan(receivedMessage, header, content);
 			case REQUEST_IMPROVE_SUGGESTIONS:
@@ -55,6 +59,7 @@ public class BrokerMessagePlanScheme extends RegistrationPlanScheme {
 			case REQUEST_PREFIX_MAPPING:
 				return new SendPreferredNamespacePrefixesPlan(receivedMessage, header, content);
 			case REQUEST_DATA_BASED_SUGGESTIONS:
+				// TODO
 				SplitQueryExpertise plan = new SplitQueryExpertise(receivedMessage, header, content);
 				plan.setSuggestionsRequested(true);
 				return plan;

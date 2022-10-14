@@ -1,6 +1,5 @@
 package org.uu.nl.goldenagents.aql;
 
-import org.apache.jena.atlas.logging.Log;
 import org.apache.jena.shared.PrefixMapping;
 import org.apache.jena.shared.impl.PrefixMappingImpl;
 import org.springframework.lang.Nullable;
@@ -9,8 +8,6 @@ import org.uu.nl.goldenagents.aql.feature.hasResource;
 import org.uu.nl.goldenagents.aql.misc.Exclusion;
 import org.uu.nl.goldenagents.netmodels.angular.AQLResource;
 import org.uu.nl.goldenagents.netmodels.angular.AQLSuggestions;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonObject;
 import org.uu.nl.goldenagents.netmodels.jena.SerializableResourceImpl;
 import org.uu.nl.net2apl.core.fipa.acl.FIPASendableObject;
 import org.uu.nl.net2apl.core.platform.Platform;
@@ -105,10 +102,6 @@ public class AQLQuery implements FIPASendableObject {
         return new SPARQLTranslation(this);
     }
 
-    public AQLJsonObject getJson() {
-        return new AQLJsonBuilder(this).build();
-    }
-
     /**
      * Convert this query to an AQL string representation
      * @return  String representation of AQL query
@@ -174,7 +167,7 @@ public class AQLQuery implements FIPASendableObject {
         }
 
         // Log the new query as AQL
-        Platform.getLogger().log(getClass(), this.getAqlString() == null ? "No AQL string provided" : this.getAqlString());
+        Platform.getLogger().log(getClass(), this.getAqlString());
 
         return success;
     }
@@ -231,34 +224,10 @@ public class AQLQuery implements FIPASendableObject {
     }
 
     public void delete() {
-        AQLTree parent = getNode(getFocus().getParentID());
-        if (parent == null) {
-            this.foci.clear();
-            this.queryTree = new MostGeneralQuery();
-            this.foci.put(this.queryTree.getFocusID(), this.queryTree);
-            setFocus(this.queryTree.getFocusID());
-        } else {
-            MostGeneralQuery replacement = new MostGeneralQuery();
-            this.foci.put(replacement.getFocusID(), replacement);
-            removeFocusIds(getFocus());
-            parent.replaceChild(getFocusName(), replacement);
-
-            if (parent instanceof BinaryAQLInfixOperator) {
-                BinaryAQLInfixOperator tParent = (BinaryAQLInfixOperator) parent;
-                if (tParent.getLeftChild() instanceof MostGeneralQuery && tParent.getRightChild() instanceof MostGeneralQuery) {
-                    Log.info(getClass().getName(), "Removing parent as well");
-                    setFocus(parent.getFocusID());
-                    delete();
-                }
-            }
-        }
-    }
-
-    private void removeFocusIds(AQLTree tree) {
-        this.foci.remove(tree.getFocusID());
-        for(AQLTree child : tree.getSubqueries()) {
-            removeFocusIds(child);
-        }
+        // Remove old from tree
+        AQLTree newFocus = new MostGeneralQuery();
+        if(this.replaceFocusWith(newFocus))
+            this.focus = newFocus.getFocusID();
     }
 
     /**
@@ -305,8 +274,8 @@ public class AQLQuery implements FIPASendableObject {
         mapping.setNsPrefixes(this.prefixMap);
         PrefixMapping newMapping = new PrefixMappingImpl();
 
-        for (String uri : uris) {
-            if (uri != null && mapping.getNsURIPrefix(uri) != null) {
+        for(String uri : uris) {
+            if(mapping.getNsURIPrefix(uri) != null) {
                 newMapping.setNsPrefix(mapping.getNsURIPrefix(uri), uri);
             }
         }
@@ -336,18 +305,5 @@ public class AQLQuery implements FIPASendableObject {
 
     public void setSuggestions(AQLSuggestions suggestions) {
         this.suggestions = suggestions;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AQLQuery aqlQuery = (AQLQuery) o;
-        return Objects.equals(queryTree, aqlQuery.queryTree);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(queryTree);
     }
 }

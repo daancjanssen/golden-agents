@@ -54,7 +54,7 @@ public class FindOntologyConceptsPlan extends LoadRDFSourcePlan {
 	public void executeOnce(PlanToAgentInterface planInterface) throws PlanExecutionError {
 		BrokerContext brokerContext = planInterface.getAgent().getContext(BrokerContext.class);
 		OntModel model;
-
+//<<<<<<< HEAD
 		if(!brokerContext.isAllOntologiesLoaded()) {
 			BrokerPrefixNamespaceContext prefixContext = planInterface.getContext(BrokerPrefixNamespaceContext.class);
 			if ((model = brokerContext.getOntology()) == null) {
@@ -80,8 +80,15 @@ public class FindOntologyConceptsPlan extends LoadRDFSourcePlan {
 
 		processOntology(brokerContext, model);
 
+//=======
+//		if((model = brokerContext.getOntology()) == null) {
+//			model = createOntModel(planInterface, c);
+//			brokerContext.setOntology(model);
+//		}
+//
+//		processOntology(c, model);
+//>>>>>>> feature/UI
 		// TODO somehow re-trigger the SimpleSuggestSearchOptionsPlan? If it had already been triggered? If so, with what query?
-		planInterface.adoptPlan(new UpdateSearchSuggestionsPlan());
 
 		// Done!
 		this.goal.setAchieved(true);

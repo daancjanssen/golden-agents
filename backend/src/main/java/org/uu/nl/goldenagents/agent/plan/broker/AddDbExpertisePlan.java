@@ -23,7 +23,7 @@ public class AddDbExpertisePlan extends MessagePlan {
 
 	@Override
 	public void executeOnce(PlanToAgentInterface planInterface, ACLMessage receivedMessage, 
-		GAMessageHeader header, FIPASendableObject content) throws PlanExecutionError {
+			GAMessageHeader header, FIPASendableObject content) throws PlanExecutionError {
 		
 		DbAgentExpertise expertise = (DbAgentExpertise) content;
 

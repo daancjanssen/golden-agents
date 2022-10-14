@@ -40,6 +40,7 @@ public class ProcessSuggestionsPlan extends MessagePlan {
             publisher.publishSuggestionsReady(planInterface.getAgentID(), suggestions);
         } catch (UnreadableException e) {
             e.printStackTrace();
+            return;
         }
     }
 }

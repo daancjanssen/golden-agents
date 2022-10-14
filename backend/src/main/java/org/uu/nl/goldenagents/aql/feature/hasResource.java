@@ -30,7 +30,7 @@ public abstract class hasResource extends Feature {
 
     @Override
     public String getFirstResourceLabel() {
-        return this.label;
+        return this.resource.getLocalName();
     }
 
     /**
@@ -40,10 +40,6 @@ public abstract class hasResource extends Feature {
      */
     @Override
     public String getAQLLabel() {
-        return label == null ? resource.getLabel() : label;
-    }
-
-    public void setLabel(String label) {
-        this.label = label;
+        return label == null ? resource.getLocalName() : label;
     }
 }

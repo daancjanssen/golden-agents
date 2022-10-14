@@ -39,7 +39,7 @@ public class AgentService {
 	public CrudAgent get(UUID id) throws AgentNotFoundException {
 		Agent agent = platform.getLocalAgent(id);
 		if( agent == null) throw new AgentNotFoundException("Agent not found.");
-		return new CrudAgent(platform.getLocalAgent(id), true);
+		return new CrudAgent(agent, true);
 	}
 
 	public CrudAgent[] getAll() {

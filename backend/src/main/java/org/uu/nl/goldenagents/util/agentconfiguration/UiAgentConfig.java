@@ -27,6 +27,14 @@ public class UiAgentConfig implements IParseAgentConfiguration {
         this(configuration, null, CrudAgent.AgentType.USER);
     }
 
+    public UiAgentConfig(String localName, String icon, CrudAgent.AgentType agentType, String description, String homepage) {
+        this.localName = localName;
+        this.icon = icon;
+        this.agentType = agentType;
+        this.description = description;
+        this.homepage = homepage;
+    }
+
     public UiAgentConfig(TomlTable configuration, String icon, CrudAgent.AgentType agentType) {
         if(!configuration.contains(CONF_NAME_KEY))
             throw new IllegalArgumentException("Missing key " + CONF_NAME_KEY);

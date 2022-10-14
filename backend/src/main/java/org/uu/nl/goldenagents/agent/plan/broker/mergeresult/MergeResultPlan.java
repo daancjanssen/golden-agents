@@ -1,10 +1,14 @@
 package org.uu.nl.goldenagents.agent.plan.broker.mergeresult;
 
+import org.apache.jena.query.Query;
+import org.apache.jena.query.Syntax;
+import org.apache.jena.rdf.model.impl.ResourceImpl;
+import org.apache.jena.sparql.core.Var;
+import org.apache.jena.sparql.lang.ParserARQ;
 import org.uu.nl.goldenagents.agent.context.BrokerContext;
 import org.uu.nl.goldenagents.agent.context.DirectSsePublisher;
 import org.uu.nl.goldenagents.agent.context.query.QueryProgressType;
 import org.uu.nl.goldenagents.agent.plan.MessagePlan;
-import org.uu.nl.goldenagents.agent.plan.broker.suggestions.RequestDbSearchSuggestionsPlan;
 import org.uu.nl.goldenagents.netmodels.angular.QueryProgress;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageContentWrapper;
 import org.uu.nl.goldenagents.netmodels.fipa.GAMessageHeader;
@@ -17,9 +21,13 @@ import org.uu.nl.net2apl.core.fipa.acl.ACLMessage;
 import org.uu.nl.net2apl.core.fipa.acl.FIPASendableObject;
 import org.uu.nl.net2apl.core.fipa.acl.Performative;
 import org.uu.nl.net2apl.core.plan.PlanExecutionError;
+import org.uu.nl.net2apl.core.platform.Platform;
 import org.uu.nl.net2apl.core.platform.PlatformNotFoundException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 public abstract class MergeResultPlan extends MessagePlan {
@@ -53,18 +61,18 @@ public abstract class MergeResultPlan extends MessagePlan {
 			this.queryID = context.getQueryID(this.conversationID);
 			this.model = context.getCachedModel(this.conversationID);
 
+			final int expectedModelNr = this.model.getExpectedSize();
+			
 			handleMessage(planInterface);
 			
 			// If we have as many cached models as are expected for this conversation
 			if(this.model.isFinished()) {
 				finalizeModel();
-				if (this.model.isSuggestionsExpected()) {
-					planInterface.adoptPlan(new RequestDbSearchSuggestionsPlan(this.model, message));
-				}
+				handleSuggestions();
 			}
 		} else {
 			logger.log(MergeResultPlan.class, Level.WARNING,
-					"in Broker.INFORM_REF: Received response-message from DB with no conversation-id");
+					"in Broker.INFORM_REF: Recieved response-message from DB with no conversation-id");
 			// TODO better error handling
 		}
 	}
@@ -107,8 +115,62 @@ public abstract class MergeResultPlan extends MessagePlan {
 			logger.log(MergeResultPlan.class, ex);
 		} finally {
 			// We don't want all cached models to hang around in memory after the work is done
-			// Keep in mind in the case of suggestions, it is also stored on the BrokerSearchSuggestionContext
+			// TODO instead of removing cached model, see if existing model can be reused in incremental search
 			this.context.removeCachedModel(this.queryID);
+		}
+	}
+
+	/**
+	 * In some cases, query results should be followed up with finding search suggestions for the UI. This method
+	 * handles that bit.
+	 */
+	private void handleSuggestions() {
+		if(this.model.isSuggestionsExpected() && this.model.getUserQueryTrigger().getSparqlTranslation() != null) {
+			logger.log(getClass(), "Starting to aggregate properties suggestions for search");
+
+			Var focus = this.model.getUserQueryTrigger().getSparqlTranslation().getFocusVar();
+			Query q = new Query();
+
+			// Parse
+			ParserARQ.createParser(Syntax.syntaxSPARQL_11).parse(q, this.model.getOriginalQuery());
+			q.setDistinct(true);
+			q.addProjectVars(Collections.singleton(focus));
+
+			// TODO this doesn't allow including new data sources
+			HashMap<AgentID, CachedModel.EntityList<String>> relevantEntities = this.model.getEntitiesAtFocus(q);
+			Platform.getLogger().log(getClass(), Level.SEVERE, "Contacting agents: " + relevantEntities.keySet().toString());
+			for(AgentID aid : relevantEntities.keySet()) {
+				if(relevantEntities.get(aid).getEntities().size() > 0) {
+					this.model.expectSuggestionsFrom(aid);
+					requestSuggestionsToAgent(aid, relevantEntities.get(aid));
+				}
+			}
+
+			// TODO, are entities resolved after linkset reasoning included here?
+//			CachedModel.EntityList<String> entities = model.getSerializableFocusEntities();
+//			for(AgentID aid : this.context.getDbAgentCapabilities().keySet()) {
+//				this.model.expectSuggestionsFrom(aid);
+//				requestSuggestionsToAgent(aid, entities);
+//			}
+		}
+	}
+
+	private void requestSuggestionsToAgent(AgentID dbAgent, CachedModel.EntityList entities) {
+		ACLMessage m = this.message.createForward(this.planInterface.getAgentID(), dbAgent);
+		m.setPerformative(Performative.REQUEST);
+		try {
+			m.setContentObject(new GAMessageContentWrapper(GAMessageHeader.REQUEST_SUGGESTIONS, entities));
+		} catch (IOException e) {
+			logger.log(getClass(), e);
+		}
+
+		try {
+			planInterface.getAgent().sendMessage(m);
+			logger.log(getClass(), Level.INFO, String.format(
+					"Requested suggestions for %d entities from db agent %s",
+					entities.getEntities().size(), dbAgent.getShortLocalName()));
+		} catch (PlatformNotFoundException | MessageReceiverNotFoundException e) {
+			logger.log(getClass(), e);
 		}
 	}
 

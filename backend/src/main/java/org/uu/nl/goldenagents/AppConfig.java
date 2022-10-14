@@ -75,6 +75,11 @@ public class AppConfig {
 					.allowedOrigins(allowedOriginsList)
 					.allowedHeaders("*")
 					.allowedMethods("GET", "POST");
+				registry
+					.addMapping("sparql/**")
+					.allowedOrigins("*")
+					.allowedHeaders("*")
+					.allowedMethods("GET", "POST");
 			}
 		};
 	}

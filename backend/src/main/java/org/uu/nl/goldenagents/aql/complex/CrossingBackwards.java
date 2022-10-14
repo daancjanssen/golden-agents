@@ -9,7 +9,6 @@ import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.aql.AQLTree;
 import org.uu.nl.goldenagents.aql.MostGeneralQuery;
 import org.uu.nl.goldenagents.aql.VariableController;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
 import org.uu.nl.goldenagents.netmodels.jena.SerializableResourceImpl;
 
 /**
@@ -20,6 +19,7 @@ import org.uu.nl.goldenagents.netmodels.jena.SerializableResourceImpl;
  *
  */
 public class CrossingBackwards extends CrossingOperator {
+    private static final String AQL_LABEL = ":";
 
     public CrossingBackwards(SerializableResourceImpl resource, AQLTree subquery) {
         super(resource, subquery);
@@ -29,9 +29,19 @@ public class CrossingBackwards extends CrossingOperator {
         super(resource, subquery, label);
     }
 
+    /**
+     * AQL label representing this node in the AQL query
+     *
+     * @return String
+     */
+    @Override
+    public String getAQLLabel() {
+        return this.getSubquery() instanceof MostGeneralQuery ? "that has a " + this.label : "whose " + this.label;
+    }
+
     public Op toARQ(Var var, VariableController controller) {
         checkIfFocus(var, controller);
-        Var freshVar = controller.getVariableForLabel(this.label);
+        Var freshVar = controller.getVariableForLabel(this.resource.getLocalName());
         Triple t = new Triple(var, this.resource.asNode(), freshVar);
         BasicPattern bp = new BasicPattern();
         bp.add(t);
@@ -46,7 +56,7 @@ public class CrossingBackwards extends CrossingOperator {
      */
     @Override
     public String toAQLString() {
-        return String.format("%s : %s", resource.getLocalName(), subquery.toAQLString());
+        return null;
     }
 
     /**

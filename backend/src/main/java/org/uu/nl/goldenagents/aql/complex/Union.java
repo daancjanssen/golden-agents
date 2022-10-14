@@ -5,7 +5,6 @@ import org.apache.jena.sparql.algebra.op.OpUnion;
 import org.apache.jena.sparql.core.Var;
 import org.uu.nl.goldenagents.aql.AQLTree;
 import org.uu.nl.goldenagents.aql.VariableController;
-import org.uu.nl.goldenagents.netmodels.angular.aql.AQLJsonBuilder;
 
 public class Union extends BinaryAQLInfixOperator {
 

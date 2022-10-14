@@ -4,12 +4,15 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntProperty;
 import org.apache.jena.rdf.model.*;
+import org.uu.nl.goldenagents.agent.context.DBAgentContext;
 import org.uu.nl.goldenagents.agent.context.PrefixNSListenerContext;
+import org.uu.nl.goldenagents.util.SparqlUtils;
 import org.uu.nl.net2apl.core.agent.Context;
 import org.uu.nl.net2apl.core.platform.Platform;
 
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -32,7 +35,7 @@ public class DbTranslationContext implements Context {
         }
     }
 
-    public void processStatement(Statement stmt) {
+    private void processStatement(Statement stmt) {
         Translation translation = new Translation(stmt, this.prefixContext);
         this.localToGlobalMapping.put(shortForm(translation.localConcept), translation);
         this.globalToLocalMapping.put(shortForm(translation.globalConcept), translation);

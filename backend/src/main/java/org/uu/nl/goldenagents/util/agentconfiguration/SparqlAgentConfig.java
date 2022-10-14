@@ -42,7 +42,11 @@ public class SparqlAgentConfig implements IParseAgentConfiguration {
         DBAgentContext c = new DBAgentContext(this.databaseConfig, this.mappingFileLocations);
         PrefixNSListenerContext prefixContext = new PrefixNSListenerContext();
         DbTranslationContext translationContext = new DbTranslationContext(c.getOntologyModel(), prefixContext);
-        c.setLoadEntitiesForExpertise(Boolean.TRUE.equals(this.dataSourceConfiguration.getBoolean(CONF_USE_ENTITIES_FOR_EXPERTISE)));
+        if(dataSourceConfiguration.contains(CONF_USE_ENTITIES_FOR_EXPERTISE)) {
+            c.setLoadEntitiesForExpertise(this.dataSourceConfiguration.getBoolean(CONF_USE_ENTITIES_FOR_EXPERTISE));
+        } else {
+            c.setLoadEntitiesForExpertise(false);
+        }
 
         DBAgentArguments sparqlAgentArguments = new DBAgentArguments(c);
         sparqlAgentArguments.addContext(prefixContext);
